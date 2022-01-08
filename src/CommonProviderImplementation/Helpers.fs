@@ -153,7 +153,7 @@ module internal ProviderHelpers =
     let private webUrisCache = createInternetFileCache "DesignTimeURIs" cacheDuration
 
     // part of the information needed by generateType
-    type TypeProviderSpec =
+    type TypeProviderSpec<'a> =
         { //the generated type
           GeneratedType : ProvidedTypeDefinition
           //the representation type (what's returned from the constructors, may or may not be the same as Type)
@@ -164,11 +164,11 @@ module internal ProviderHelpers =
           /// the constructor from a text reader to an array of the representation
           CreateFromTextReaderForSampleList : Expr<TextReader> -> Expr
           /// Runtime representation of underlying data (e.g. JsonValue) * Mapper function
-          CreateFromValue: (Type * (Expr -> Expr)) option
+          CreateFromValue: (Type * (Expr<'a> -> Expr)) option
            }
 
-    type private ParseTextResult =
-        { Spec : TypeProviderSpec
+    type private ParseTextResult<'a> =
+        { Spec : TypeProviderSpec<'a>
           IsUri : bool
           IsResource : bool }
 
@@ -377,7 +377,7 @@ module internal ProviderHelpers =
     ///     (the value specifies assembly and resource name e.g. "MyCompany.MyAssembly, some_resource.json")</param>
     /// <param name="fullTypeName">the full name of the type provider, this will be used as the caching key</param>
     /// <param name="maxNumberOfRows">the max number of rows to read from the sample or schema</param>
-    let generateType formatName source getSpec
+    let generateType<'a> formatName source (getSpec: string -> string -> TypeProviderSpec<'a>)
                      (tp:DisposableTypeProviderForNamespaces) (cfg:TypeProviderConfig)
                      encodingStr resolutionFolder resource fullTypeName maxNumberOfRows  =
 
@@ -466,8 +466,8 @@ module internal ProviderHelpers =
             let args = [ ProvidedParameter("value", valueType) ]
             let m = ProvidedMethod("Load", args, resultType, isStatic = true,
                                     invokeCode = fun (Singleton value) ->
-                                         <@ %%value @>
-                                         |> valueMapper)
+                                         let value = value |> Expr.Cast
+                                         <@ %value @> |> valueMapper)
             m.AddXmlDoc <| sprintf "Loads %s from the specified value" formatName
             yield m :> _
 

@@ -69,7 +69,7 @@ type public JsonProvider(cfg:TypeProviderConfig) as this =
                       result.Convert <@@ JsonDocument.CreateList(%reader) @@>)
                   CreateFromTextReaderForSampleList = fun reader ->
                       result.Convert <@@ JsonDocument.CreateList(%reader) @@>
-                  CreateFromValue = Some (typeof<JsonValue>, fun value -> result.Convert <@@ JsonDocument.Create(%%value, "") @@>)
+                  CreateFromValue = Some (typeof<JsonValue>, fun value -> result.Convert <@@ JsonDocument.Create(%value, "") @@>)
                   }
 
         let source =
